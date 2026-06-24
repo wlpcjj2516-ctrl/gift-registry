@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบเบิก-จ่ายกิฟต์เซ็ตผู้ป่วยพิเศษ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+  :root{
+    --bg:#F6F1E7;
+    --paper:#FFFFFF;
+    --ink:#2A241F;
+    --ink-soft:#6B6258;
+    --teal:#0F5E56;
+    --teal-deep:#0A453F;
+    --gold:#B8893E;
+    --rose:#A9394A;
+    --sage:#5B7F5E;
+    --slate:#586672;
+    --line: rgba(42,36,31,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, rgba(42,36,31,0.05) 1px, transparent 0);
+    background-size: 18px 18px;
+    color:var(--ink);
+    font-family:'Noto Sans Thai', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:22px 16px 0;}
+
+  header{margin-bottom:18px;}
+  .eyebrow{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:.14em;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Noto Serif Thai', serif;
+    font-weight:700;
+    font-size:24px;
+    line-height:1.3;
+    margin:0 0 4px;
+    color:var(--teal-deep);
+  }
+  .sub{font-size:13.5px;color:var(--ink-soft);margin:0;}
+
+  .banner{
+    background:#FCEFD9;border:1px solid #E7C880;color:#7A5414;
+    font-size:12.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;
+    display:none;
+  }
+  .banner.show{display:block;}
+
+  .tabs{display:flex;gap:8px;margin:18px 0 16px;border-bottom:1px solid var(--line);}
+  .tab-btn{
+    flex:1;
+    background:none;border:none;
+    font-family:'Noto Sans Thai',sans-serif;
+    font-size:14.5px;font-weight:600;
+    color:var(--ink-soft);
+    padding:10px 6px 12px;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    transition:color .15s, border-color .15s;
+  }
+  .tab-btn.active{color:var(--teal-deep);border-color:var(--gold);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    box-shadow:0 1px 3px rgba(42,36,31,0.05);
+    margin-bottom:18px;
+  }
+  .card h2{
+    font-family:'Noto Serif Thai',serif;
+    font-size:16.5px;
+    margin:0 0 14px;
+    color:var(--teal-deep);
+  }
+  .field{margin-bottom:13px;}
+  .field label{
+    display:block;font-size:12.5px;font-weight:600;
+    color:var(--ink-soft);margin-bottom:5px;
+  }
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  input,select,textarea{
+    width:100%;
+    font-family:'Noto Sans Thai',sans-serif;
+    font-size:14.5px;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#FBFAF7;
+    color:var(--ink);
+  }
+  select{appearance:auto;}
+  input:focus,select:focus,textarea:focus{
+    outline:2px solid var(--teal);outline-offset:1px;
+    border-color:var(--teal);
+  }
+  textarea{resize:vertical;min-height:54px;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    font-family:'Noto Sans Thai',sans-serif;
+    font-weight:700;font-size:14.5px;
+    padding:11px 18px;
+    border-radius:8px;border:none;
+    cursor:pointer;
+    background:var(--teal);color:#fff;
+    transition:background .15s, transform .1s;
+  }
+  .btn:hover{background:var(--teal-deep);}
+  .btn:active{transform:scale(0.98);}
+  .btn.full{width:100%;}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink-soft);}
+  .btn.ghost:hover{border-color:var(--ink-soft);}
+  .btn.small{font-size:12.5px;padding:7px 12px;border-radius:6px;}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .helper-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+
+  .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+  .summary .box{
+    background:var(--paper);border:1px solid var(--line);border-radius:9px;
+    padding:12px 8px;text-align:center;
+  }
+  .summary .box .num{font-family:'Noto Serif Thai',serif;font-size:22px;font-weight:700;color:var(--teal-deep);}
+  .summary .box .lbl{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .summary .box.pending{border-top:3px solid var(--rose);}
+  .summary .box.prepared{border-top:3px solid var(--sage);}
+  .summary .box.delivered{border-top:3px solid var(--slate);}
+
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  .chip{
+    font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:20px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .chip.active{background:var(--teal-deep);color:#fff;border-color:var(--teal-deep);}
+  .search-row{display:flex;gap:8px;margin-bottom:14px;}
+  .search-row input{flex:1;}
+
+  .tag-card{
+    position:relative;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:5px 16px 16px 5px;
+    padding:16px 46px 14px 32px;
+    margin-bottom:12px;
+    box-shadow:0 1px 2px rgba(42,36,31,0.04);
+  }
+  .tag-card::before{
+    content:"";
+    position:absolute;left:11px;top:18px;
+    width:9px;height:9px;border-radius:50%;
+    background:var(--bg);
+    border:1px solid rgba(42,36,31,0.22);
+  }
+  .tag-card .name{
+    font-family:'Noto Serif Thai',serif;
+    font-weight:700;font-size:15.5px;color:var(--ink);margin:0 0 2px;
+  }
+  .tag-card .meta{font-size:12.5px;color:var(--ink-soft);line-height:1.6;}
+  .tag-card .meta b{color:var(--ink);font-weight:600;}
+  .tag-card .note{font-size:12.5px;color:var(--ink-soft);margin-top:6px;font-style:italic;}
+  .seal{
+    position:absolute;top:10px;right:10px;
+    width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:'Noto Serif Thai',serif;font-weight:700;font-size:10.5px;line-height:1.15;
+    color:#fff;transform:rotate(-7deg);
+    border:2px dashed rgba(255,255,255,0.55);
+    box-shadow:0 1px 3px rgba(0,0,0,0.18);
+  }
+  .seal.pending{background:var(--rose);}
+  .seal.prepared{background:var(--sage);}
+  .seal.delivered{background:var(--slate);}
+  .tag-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+
+  .empty{
+    text-align:center;padding:34px 10px;color:var(--ink-soft);font-size:13.5px;
+  }
+  .empty .big{font-size:30px;display:block;margin-bottom:6px;}
+
+  footer{
+    text-align:center;font-size:11px;color:var(--ink-soft);margin-top:26px;
+    display:flex;justify-content:center;gap:14px;align-items:center;
+  }
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(8px);
+    background:var(--teal-deep);color:#fff;font-size:13px;font-weight:600;
+    padding:10px 18px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.18);
+    opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:50;
+    max-width:90%;text-align:center;
+  }
+  .toast.warn{background:#7A5414;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media print{
+    .tabs,.tab-btn,header .eyebrow,.card.form-card,.filters,.search-row,.tag-actions,footer,.no-print,.banner{display:none !important;}
+    body{background:#fff;}
+    .tag-card{box-shadow:none;border:1px solid #999;}
+  }
+
+  /* ---------- Requisition (ใบเบิก) modal ---------- */
+  .req-overlay{
+    position:fixed;inset:0;background:rgba(42,36,31,0.55);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:20px 12px;overflow-y:auto;z-index:60;
+  }
+  .req-overlay.open{display:flex;}
+  .req-modal-card{
+    background:#fff;border-radius:12px;max-width:640px;width:100%;
+    padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    margin-top:10px;
+  }
+  .req-controls{border-bottom:1px dashed var(--line);padding-bottom:14px;margin-bottom:16px;}
+  .req-controls-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .req-controls-head h3{font-family:'Noto Serif Thai',serif;font-size:16px;color:var(--teal-deep);margin:0;}
+  .req-close{background:none;border:none;font-size:18px;color:var(--ink-soft);cursor:pointer;padding:4px;}
+
+  .req-doc{font-family:'Noto Serif Thai',serif;color:var(--ink);}
+  .req-doc-eyebrow{text-align:center;font-size:12.5px;color:var(--ink-soft);margin:0;font-family:'Noto Sans Thai',sans-serif;}
+  .req-doc-title{text-align:center;font-size:18px;margin:2px 0 14px;color:var(--teal-deep);}
+  .req-doc-info{width:100%;font-size:13px;font-family:'Noto Sans Thai',sans-serif;margin-bottom:12px;border-collapse:collapse;}
+  .req-doc-info td{padding:2px 4px;}
+  .req-doc-table{width:100%;border-collapse:collapse;font-size:12.5px;font-family:'Noto Sans Thai',sans-serif;margin-bottom:16px;}
+  .req-doc-table th,.req-doc-table td{border:1px solid #999;padding:6px 7px;text-align:left;}
+  .req-doc-table th{background:#F1EBDD;}
+  .req-doc-cert{
+    font-size:12.5px;font-family:'Noto Sans Thai',sans-serif;line-height:1.7;color:var(--ink);
+    border-left:3px solid var(--gold);padding-left:10px;margin-bottom:22px;
+  }
+  .sig-row{display:flex;gap:18px;flex-wrap:wrap;}
+  .sig-box{flex:1;min-width:220px;font-family:'Noto Sans Thai',sans-serif;font-size:12.5px;}
+  .sig-line{margin:0 0 6px;}
+  .sig-sub{margin:0 0 4px;color:var(--ink-soft);}
+
+  @media print{
+    body.req-printing > *:not(#req-overlay){display:none !important;}
+    body.req-printing #req-overlay{position:static !important;background:none !important;padding:0 !important;display:block !important;}
+    body.report-printing > *:not(#report-overlay){display:none !important;}
+    body.report-printing #report-overlay{position:static !important;background:none !important;padding:0 !important;display:block !important;}
+    body.req-printing .req-controls, body.report-printing .req-controls{display:none !important;}
+    body.req-printing .req-modal-card, body.report-printing .req-modal-card{box-shadow:none !important;max-width:100% !important;margin:0 !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">VIP Gift Registry</p>
+    <h1>ระบบเบิก–จ่ายกิฟต์เซ็ตผู้ป่วยพิเศษ</h1>
+    <p class="sub">หอผู้ป่วยพิเศษ ชั้น 8–9 และหอผู้ป่วยพิเศษศัลยกรรม ชั้น 6 · รพ.บึงกาฬ</p>
+  </header>
+
+  <div class="banner" id="storage-banner">
+    ⚠️ ขณะนี้ไม่สามารถเชื่อมต่อระบบจัดเก็บข้อมูลกลางได้ ข้อมูลที่บันทึกจะแสดงในหน้านี้เท่านั้น และจะหายไปเมื่อปิดหน้าเว็บ — กรุณาเปิดไฟล์นี้ผ่าน Claude เพื่อให้ข้อมูลซิงก์ข้ามอุปกรณ์ได้
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="ward">📝 บันทึกผู้ป่วยใหม่</button>
+    <button class="tab-btn" data-tab="admin">🎁 เตรียมของ (แอดมิน)</button>
+  </div>
+
+  <!-- ============ WARD PANEL ============ -->
+  <div class="panel active" id="panel-ward">
+    <div class="card form-card">
+      <h2>คีย์รายชื่อผู้ป่วยใหม่ที่ต้องได้รับกิฟต์เซ็ต</h2>
+      <form id="ward-form">
+        <div class="row2">
+          <div class="field">
+            <label for="ward">หน่วยงาน / ตึก</label>
+            <select id="ward" required>
+              <option value="" disabled selected>เลือกหน่วยงาน</option>
+              <option value="หอผู้ป่วยพิเศษ ชั้น 9">หอผู้ป่วยพิเศษ ชั้น 9</option>
+              <option value="หอผู้ป่วยพิเศษ ชั้น 8">หอผู้ป่วยพิเศษ ชั้น 8</option>
+              <option value="หอผู้ป่วยพิเศษศัลยกรรม ชั้น 6">หอผู้ป่วยพิเศษศัลยกรรม ชั้น 6</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="room">เลขห้อง / เตียง</label>
+            <input id="room" placeholder="เช่น 802">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="patientName">ชื่อ–สกุลผู้ป่วย</label>
+          <input id="patientName" placeholder="ชื่อ นามสกุล" required>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="admitDate">วันที่รับใหม่</label>
+            <input id="admitDate" type="date">
+          </div>
+          <div class="field">
+            <label for="giftType">ประเภทกิฟต์เซ็ต</label>
+            <select id="giftType">
+              <option>ชุดมาตรฐาน</option>
+              <option>ชุดพิเศษ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="recordedBy">ผู้บันทึก</label>
+          <input id="recordedBy" placeholder="ชื่อเจ้าหน้าที่ผู้บันทึก" required>
+        </div>
+
+        <div class="field">
+          <label for="note">หมายเหตุ (ถ้ามี)</label>
+          <textarea id="note" placeholder="เช่น ผู้ป่วยแพ้น้ำหอม / ครอบครัวขอ 2 ชุด"></textarea>
+        </div>
+
+        <button type="submit" class="btn full">＋ บันทึกขอเบิกกิฟต์เซ็ต</button>
+      </form>
+      <button type="button" class="btn ghost full no-print" id="open-req-btn" style="margin-top:10px;">🖨️ พิมพ์ใบเบิก (พร้อมลายเซ็นรับรองหัวหน้างาน)</button>
+    </div>
+
+    <div class="helper-row">
+      <h2 style="font-family:'Noto Serif Thai',serif;font-size:15px;color:var(--teal-deep);margin:0;">รายการที่บันทึกล่าสุด</h2>
+      <button class="btn ghost small no-print" id="ward-refresh">⟳ รีเฟรช</button>
+    </div>
+    <div id="ward-list-area"></div>
+  </div>
+
+  <!-- ============ ADMIN PANEL ============ -->
+  <div class="panel" id="panel-admin">
+    <div class="summary">
+      <div class="box pending"><div class="num" id="cnt-pending">0</div><div class="lbl">รอเตรียม</div></div>
+      <div class="box prepared"><div class="num" id="cnt-prepared">0</div><div class="lbl">เตรียมแล้ว</div></div>
+      <div class="box delivered"><div class="num" id="cnt-delivered">0</div><div class="lbl">จัดส่งแล้ว</div></div>
+    </div>
+
+    <div class="filters">
+      <button class="chip active" data-filter="all">ทั้งหมด</button>
+      <button class="chip" data-filter="pending">รอเตรียม</button>
+      <button class="chip" data-filter="prepared">เตรียมแล้ว</button>
+      <button class="chip" data-filter="delivered">จัดส่งแล้ว</button>
+    </div>
+
+    <div class="search-row">
+      <input id="admin-search" placeholder="ค้นหาชื่อผู้ป่วย / หน่วยงาน / ห้อง">
+      <button class="btn ghost small no-print" id="admin-refresh">⟳</button>
+    </div>
+
+    <div id="admin-list-area"></div>
+
+    <div class="card no-print" style="margin-top:18px;">
+      <h2 style="font-size:14px;">เครื่องมือเพิ่มเติม</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn ghost small" onclick="window.print()">🖨️ พิมพ์รายการเตรียมของ</button>
+        <button class="btn ghost small" id="open-report-btn">📊 สร้างรายงานสรุป (รายเดือน/รายปี)</button>
+        <button class="btn ghost small" id="reset-btn" style="color:var(--rose);border-color:var(--rose);">ล้างข้อมูลทั้งหมด</button>
+      </div>
+      <p class="hint">ข้อมูลทั้งหมดเป็นข้อมูลที่ใช้ร่วมกัน (shared) — ทุกคนที่เปิดลิงก์นี้จะเห็นรายการเดียวกัน หากบันทึกพร้อมกันหลายคนมาก ๆ ข้อมูลที่บันทึกหลังอาจทับของก่อนหน้าได้เล็กน้อย</p>
+    </div>
+  </div>
+
+  <footer>
+    <span>ออกแบบสำหรับหอผู้ป่วยพิเศษ ชั้น 8–9 และศัลยกรรม ชั้น 6</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="req-overlay" id="req-overlay">
+  <div class="req-modal-card">
+    <div class="req-controls no-print">
+      <div class="req-controls-head">
+        <h3>สร้างใบเบิกกิฟต์เซ็ต</h3>
+        <button class="req-close" id="req-close-btn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="req-ward-filter">หน่วยงาน</label>
+          <select id="req-ward-filter">
+            <option value="all">ทุกหน่วยงาน</option>
+            <option value="หอผู้ป่วยพิเศษ ชั้น 9">หอผู้ป่วยพิเศษ ชั้น 9</option>
+            <option value="หอผู้ป่วยพิเศษ ชั้น 8">หอผู้ป่วยพิเศษ ชั้น 8</option>
+            <option value="หอผู้ป่วยพิเศษศัลยกรรม ชั้น 6">หอผู้ป่วยพิเศษศัลยกรรม ชั้น 6</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="req-date-filter">วันที่รับใหม่</label>
+          <input type="date" id="req-date-filter">
+        </div>
+      </div>
+      <p class="hint">เว้นวันที่ไว้ = แสดงทุกวันที่ของหน่วยงานที่เลือก</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" id="req-print-btn" style="flex:1;min-width:110px;">🖨️ พิมพ์</button>
+        <button class="btn ghost" id="req-pdf-btn" style="flex:1;min-width:110px;">⬇️ ดาวน์โหลด PDF</button>
+      </div>
+      <button class="btn ghost full" id="req-back-btn-top" style="margin-top:8px;">← กลับไปหน้าหลัก</button>
+    </div>
+
+    <div class="req-doc" id="req-doc">
+      <p class="req-doc-eyebrow">โรงพยาบาลบึงกาฬ</p>
+      <h2 class="req-doc-title">ใบเบิกกิฟต์เซ็ตผู้ป่วยพิเศษ</h2>
+      <table class="req-doc-info">
+        <tr><td><b>หน่วยงาน:</b></td><td id="req-doc-ward">–</td><td><b>วันที่รับใหม่:</b></td><td id="req-doc-date">–</td></tr>
+        <tr><td><b>จำนวนผู้ป่วยทั้งหมด:</b></td><td id="req-doc-count">0</td><td colspan="2">ราย</td></tr>
+      </table>
+
+      <table class="req-doc-table">
+        <thead>
+          <tr>
+            <th style="width:30px;">ลำดับ</th>
+            <th>ชื่อ–สกุลผู้ป่วย</th>
+            <th style="width:55px;">ห้อง</th>
+            <th style="width:85px;">ประเภทกิฟต์เซ็ต</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="req-doc-tbody"></tbody>
+      </table>
+
+      <p class="req-doc-cert">
+        ข้าพเจ้าขอรับรองว่ารายชื่อผู้ป่วยข้างต้นเป็นผู้ป่วยที่เข้ารับการรักษาจริงในหน่วยงานนี้
+        และสมควรได้รับกิฟต์เซ็ตต้อนรับผู้ป่วยพิเศษตามระเบียบของโรงพยาบาล
+      </p>
+
+      <div class="sig-row">
+        <div class="sig-box">
+          <p class="sig-line">ลงชื่อ ......................................................</p>
+          <p class="sig-sub">( ......................................................... )</p>
+          <p class="sig-sub">ผู้บันทึกรายชื่อ</p>
+          <p class="sig-sub">ตำแหน่ง ........................................................</p>
+          <p class="sig-sub">วันที่ ........... / ........... / ...........</p>
+        </div>
+        <div class="sig-box">
+          <p class="sig-line">ลงชื่อ ......................................................</p>
+          <p class="sig-sub">( ......................................................... )</p>
+          <p class="sig-sub">หัวหน้าหน่วยงาน (ผู้รับรองรายชื่อ)</p>
+          <p class="sig-sub">ตำแหน่ง ........................................................</p>
+          <p class="sig-sub">วันที่ ........... / ........... / ...........</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn ghost full no-print" id="req-back-btn-bottom" style="margin-top:16px;">← กลับไปหน้าหลัก</button>
+  </div>
+</div>
+
+<div class="req-overlay" id="report-overlay">
+  <div class="req-modal-card">
+    <div class="req-controls no-print">
+      <div class="req-controls-head">
+        <h3>สร้างรายงานสรุป</h3>
+        <button class="req-close" id="report-close-btn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="filters" style="margin-bottom:10px;">
+        <button class="chip active" data-period="month">รายเดือน</button>
+        <button class="chip" data-period="year">รายปี</button>
+      </div>
+      <div class="row2">
+        <div class="field" id="report-month-field">
+          <label for="report-month">เดือน</label>
+          <input type="month" id="report-month">
+        </div>
+        <div class="field" id="report-year-field" style="display:none;">
+          <label for="report-year">ปี</label>
+          <select id="report-year"></select>
+        </div>
+        <div class="field">
+          <label for="report-ward">หน่วยงาน</label>
+          <select id="report-ward">
+            <option value="all">ทุกหน่วยงาน</option>
+            <option value="หอผู้ป่วยพิเศษ ชั้น 9">หอผู้ป่วยพิเศษ ชั้น 9</option>
+            <option value="หอผู้ป่วยพิเศษ ชั้น 8">หอผู้ป่วยพิเศษ ชั้น 8</option>
+            <option value="หอผู้ป่วยพิเศษศัลยกรรม ชั้น 6">หอผู้ป่วยพิเศษศัลยกรรม ชั้น 6</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" id="report-print-btn" style="flex:1;min-width:100px;">🖨️ พิมพ์</button>
+        <button class="btn ghost" id="report-pdf-btn" style="flex:1;min-width:100px;">⬇️ PDF</button>
+        <button class="btn ghost" id="report-csv-btn" style="flex:1;min-width:100px;">⬇️ CSV</button>
+      </div>
+      <button class="btn ghost full" id="report-back-btn-top" style="margin-top:8px;">← กลับไปหน้าหลัก</button>
+    </div>
+
+    <div class="req-doc" id="report-doc">
+      <p class="req-doc-eyebrow">โรงพยาบาลบึงกาฬ</p>
+      <h2 class="req-doc-title">รายงานสรุปการเบิกกิฟต์เซ็ตผู้ป่วยพิเศษ</h2>
+      <table class="req-doc-info">
+        <tr><td><b>ช่วงเวลา:</b></td><td id="report-doc-period">–</td><td><b>หน่วยงาน:</b></td><td id="report-doc-ward">–</td></tr>
+        <tr><td><b>จำนวนทั้งหมด:</b></td><td id="report-doc-count">0</td><td colspan="2" id="report-doc-status-breakdown" style="font-size:12px;color:var(--ink-soft);"></td></tr>
+      </table>
+
+      <table class="req-doc-table">
+        <thead>
+          <tr>
+            <th style="width:28px;">ลำดับ</th>
+            <th style="width:75px;">วันที่รับใหม่</th>
+            <th>หน่วยงาน</th>
+            <th>ชื่อ–สกุลผู้ป่วย</th>
+            <th style="width:45px;">ห้อง</th>
+            <th style="width:75px;">ประเภท</th>
+            <th style="width:65px;">สถานะ</th>
+            <th>ผู้บันทึก</th>
+          </tr>
+        </thead>
+        <tbody id="report-doc-tbody"></tbody>
+      </table>
+    </div>
+    <button class="btn ghost full no-print" id="report-back-btn-bottom" style="margin-top:16px;">← กลับไปหน้าหลัก</button>
+  </div>
+</div>
+
+<script>
+// ===================================================================
+// ตั้งค่าระบบเก็บข้อมูลกลาง (ใช้ได้นอก Claude เมื่อดาวน์โหลด/ส่งไฟล์ต่อ)
+// วางลิงก์ Google Apps Script Web App ของคุณไว้ระหว่าง '' ด้านล่างนี้
+// (ดูวิธีสร้างได้ในคู่มือที่แนบมาพร้อมไฟล์นี้)
+// ถ้าเว้นว่างไว้ ระบบจะใช้ Claude storage โดยอัตโนมัติเมื่อเปิดผ่าน Claude
+// ===================================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9KAAOB7z5y4tEJhfdinaJh6roSfoXW9NflGlPmkeUaombCrisqORzHO0JNBorftNQ/exec';
+
+const STORAGE_KEY = 'gift-requests';
+let allRequests = [];
+let currentFilter = 'all';
+let searchTerm = '';
+
+function showToast(msg, warn){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('warn', !!warn);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), warn ? 3200 : 1800);
+}
+
+function uid(){
+  return 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function storageReady(){
+  return typeof window.storage !== 'undefined' && window.storage !== null;
+}
+
+// 'claude' = ใช้ window.storage (ใช้ได้เมื่อเปิดผ่าน Claude เท่านั้น)
+// 'sheet'  = ใช้ Google Apps Script ที่ตั้งค่าไว้ด้านบน (ใช้ได้ทุกที่)
+// 'none'   = ยังไม่มีระบบเก็บข้อมูลกลางใด ๆ พร้อมใช้งาน
+function backendMode(){
+  if(storageReady()) return 'claude';
+  if(APPS_SCRIPT_URL) return 'sheet';
+  return 'none';
+}
+
+function setBanner(text){
+  const el = document.getElementById('storage-banner');
+  if(text){
+    el.textContent = text;
+    el.classList.add('show');
+  }else{
+    el.classList.remove('show');
+  }
+}
+
+const BANNER_NONE = '⚠️ ยังไม่ได้ตั้งค่าระบบเก็บข้อมูลกลาง — ข้อมูลที่บันทึกจะแสดงในหน้านี้เท่านั้น และจะหายไปเมื่อปิดหน้าเว็บ กรุณาเปิดไฟล์นี้ผ่าน Claude หรือตั้งค่า Google Sheets ตามคู่มือที่แนบมา';
+const BANNER_SHEET_FAIL = '⚠️ เชื่อมต่อ Google Sheets ไม่สำเร็จ (ตรวจสอบอินเทอร์เน็ตหรือลิงก์ Apps Script) — ข้อมูลล่าสุดอาจไม่ถูกซิงก์';
+
+// Pull the latest shared list into the in-memory array. Never throws.
+async function fetchFromStorage(){
+  const mode = backendMode();
+  if(mode === 'none'){ setBanner(BANNER_NONE); return false; }
+
+  if(mode === 'claude'){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, true);
+      if(res && typeof res.value === 'string') allRequests = JSON.parse(res.value);
+      setBanner(null);
+      return true;
+    }catch(e){
+      // key may simply not exist yet (first ever use) — treat as empty, not an error
+      console.warn('fetchFromStorage(claude):', e);
+      setBanner(null);
+      return true;
+    }
+  }
+
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?action=list');
+    const data = await res.json();
+    if(Array.isArray(data)) allRequests = data;
+    setBanner(null);
+    return true;
+  }catch(e){
+    console.warn('fetchFromStorage(sheet):', e);
+    setBanner(BANNER_SHEET_FAIL);
+    return false;
+  }
+}
+
+// Overwrite the whole dataset (used by "ล้างข้อมูลทั้งหมด" and as the claude-mode save path)
+async function persistAll(){
+  const mode = backendMode();
+  if(mode === 'none'){ setBanner(BANNER_NONE); return false; }
+
+  if(mode === 'claude'){
+    try{
+      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(allRequests), true);
+      return !!result;
+    }catch(e){ console.warn('persistAll(claude):', e); return false; }
+  }
+
+  // sheet mode: only used to clear everything — sent as a plain GET (no body),
+  // since POST bodies get silently dropped when Apps Script issues its redirect.
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?action=reset');
+    const data = await res.json();
+    if(!data || data.ok !== true) throw new Error('unexpected response');
+    setBanner(null);
+    return true;
+  }catch(e){
+    console.warn('persistAll(sheet):', e);
+    setBanner(BANNER_SHEET_FAIL);
+    return false;
+  }
+}
+
+// Add a single new entry to the backend
+async function backendAdd(entry){
+  const mode = backendMode();
+  if(mode === 'claude' || mode === 'none') return persistAll();
+  try{
+    const url = APPS_SCRIPT_URL + '?action=add&entry=' + encodeURIComponent(JSON.stringify(entry));
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!data || data.ok !== true) throw new Error('unexpected response');
+    setBanner(null);
+    return true;
+  }catch(e){
+    console.warn('backendAdd(sheet):', e);
+    setBanner(BANNER_SHEET_FAIL);
+    return false;
+  }
+}
+
+// Update a single existing entry on the backend
+async function backendUpdate(entry){
+  const mode = backendMode();
+  if(mode === 'claude' || mode === 'none') return persistAll();
+  try{
+    const url = APPS_SCRIPT_URL + '?action=update&entry=' + encodeURIComponent(JSON.stringify(entry));
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!data || data.ok !== true) throw new Error('unexpected response');
+    setBanner(null);
+    return true;
+  }catch(e){
+    console.warn('backendUpdate(sheet):', e);
+    setBanner(BANNER_SHEET_FAIL);
+    return false;
+  }
+}
+
+async function addRequestLocal(data){
+  const entry = {
+    id: uid(),
+    ward: data.ward,
+    room: data.room,
+    patientName: data.patientName,
+    admitDate: data.admitDate,
+    giftType: data.giftType,
+    recordedBy: data.recordedBy,
+    note: data.note,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    preparedBy: null, preparedAt: null,
+    deliveredBy: null, deliveredAt: null
+  };
+  allRequests.unshift(entry);
+  const ok = await backendAdd(entry);
+  return ok;
+}
+
+async function advanceStatusLocal(id, toStatus, actorName){
+  const e = allRequests.find(r => r.id === id);
+  if(!e) return false;
+  e.status = toStatus;
+  const now = new Date().toISOString();
+  if(toStatus === 'prepared'){ e.preparedBy = actorName || 'ไม่ระบุ'; e.preparedAt = now; }
+  if(toStatus === 'delivered'){ e.deliveredBy = actorName || 'ไม่ระบุ'; e.deliveredAt = now; }
+  if(toStatus === 'pending'){ e.preparedBy=null; e.preparedAt=null; e.deliveredBy=null; e.deliveredAt=null; }
+  const ok = await backendUpdate(e);
+  return ok;
+}
+
+function fmtDate(iso){
+  if(!iso) return '–';
+  const d = new Date(iso);
+  return d.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'}) +
+         ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function sealText(status){
+  if(status === 'pending') return ['รอ','เตรียม'];
+  if(status === 'prepared') return ['เตรียม','แล้ว'];
+  return ['ส่งแล้ว'];
+}
+
+function tagCardHTML(r, mode){
+  const lines = sealText(r.status).map(l => '<div>' + l + '</div>').join('');
+  let actions = '';
+  if(mode === 'admin'){
+    if(r.status === 'pending'){
+      actions = '<button class="btn small" data-action="prepared" data-id="' + r.id + '">✓ เตรียมของแล้ว</button>';
+    } else if(r.status === 'prepared'){
+      actions = '<button class="btn small" data-action="delivered" data-id="' + r.id + '">📦 จัดส่งแล้ว</button>' +
+                '<button class="btn ghost small" data-action="pending" data-id="' + r.id + '">↩ ย้อนกลับ</button>';
+    } else {
+      actions = '<button class="btn ghost small" data-action="prepared" data-id="' + r.id + '">↩ ย้อนกลับ</button>';
+    }
+  }
+  let html = '<div class="tag-card">';
+  html += '<div class="seal ' + r.status + '">' + lines + '</div>';
+  html += '<p class="name">' + escapeHtml(r.patientName) + '</p>';
+  html += '<div class="meta">';
+  html += '<b>' + escapeHtml(r.ward||'-') + '</b> · ห้อง ' + escapeHtml(r.room||'-') + ' · ' + escapeHtml(r.giftType||'ชุดมาตรฐาน') + '<br>';
+  html += 'รับใหม่: ' + (r.admitDate || '-') + ' &nbsp;·&nbsp; บันทึกโดย ' + escapeHtml(r.recordedBy||'-') + '<br>';
+  html += 'บันทึกเมื่อ ' + fmtDate(r.createdAt);
+  if(r.preparedAt) html += '<br>เตรียมโดย ' + escapeHtml(r.preparedBy) + ' · ' + fmtDate(r.preparedAt);
+  if(r.deliveredAt) html += '<br>จัดส่งโดย ' + escapeHtml(r.deliveredBy) + ' · ' + fmtDate(r.deliveredAt);
+  html += '</div>';
+  if(r.note) html += '<p class="note">"' + escapeHtml(r.note) + '"</p>';
+  if(actions) html += '<div class="tag-actions">' + actions + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function emptyHTML(text){
+  return '<div class="empty"><span class="big">🎀</span>' + text + '</div>';
+}
+
+function renderWardList(){
+  const recent = allRequests.slice(0, 15);
+  const area = document.getElementById('ward-list-area');
+  area.innerHTML = recent.length
+    ? recent.map(r => tagCardHTML(r, 'ward')).join('')
+    : emptyHTML('ยังไม่มีรายการที่บันทึกไว้');
+}
+
+function renderAdminList(){
+  const cP = allRequests.filter(r=>r.status==='pending').length;
+  const cPr = allRequests.filter(r=>r.status==='prepared').length;
+  const cD = allRequests.filter(r=>r.status==='delivered').length;
+  document.getElementById('cnt-pending').textContent = cP;
+  document.getElementById('cnt-prepared').textContent = cPr;
+  document.getElementById('cnt-delivered').textContent = cD;
+
+  let list = allRequests;
+  if(currentFilter !== 'all') list = list.filter(r => r.status === currentFilter);
+  if(searchTerm){
+    const t = searchTerm.toLowerCase();
+    list = list.filter(r =>
+      (r.patientName||'').toLowerCase().includes(t) ||
+      (r.ward||'').toLowerCase().includes(t) ||
+      (r.room||'').toLowerCase().includes(t)
+    );
+  }
+  const area = document.getElementById('admin-list-area');
+  area.innerHTML = list.length
+    ? list.map(r => tagCardHTML(r, 'admin')).join('')
+    : emptyHTML('ไม่พบรายการตามเงื่อนไขนี้');
+}
+
+async function refreshWard(){
+  await fetchFromStorage();
+  renderWardList();
+}
+
+async function refreshAdmin(){
+  await fetchFromStorage();
+  renderAdminList();
+}
+
+// ---------- Event wiring ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('panel-'+tab).classList.add('active');
+    if(tab === 'ward') refreshWard(); else refreshAdmin();
+  });
+});
+
+document.getElementById('ward-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const data = {
+    ward: document.getElementById('ward').value.trim(),
+    room: document.getElementById('room').value.trim(),
+    patientName: document.getElementById('patientName').value.trim(),
+    admitDate: document.getElementById('admitDate').value,
+    giftType: document.getElementById('giftType').value,
+    recordedBy: document.getElementById('recordedBy').value.trim(),
+    note: document.getElementById('note').value.trim()
+  };
+  if(!data.patientName || !data.ward || !data.recordedBy){
+    showToast('กรุณากรอกข้อมูลให้ครบ (หน่วยงาน, ชื่อผู้ป่วย, ผู้บันทึก)', true);
+    return;
+  }
+  submitBtn.disabled = true;
+  let ok = false;
+  try{
+    ok = await addRequestLocal(data);
+  }catch(err){
+    console.error('submit error:', err);
+    ok = false;
+  }
+  submitBtn.disabled = false;
+
+  renderWardList(); // always show it immediately — the entry is already in memory
+  if(ok){
+    showToast('บันทึกขอเบิกกิฟต์เซ็ตแล้ว');
+  }else{
+    showToast('บันทึกในหน้านี้แล้ว แต่ซิงก์ไปอุปกรณ์อื่นไม่สำเร็จ — กดรีเฟรชอีกครั้งเพื่อลองใหม่', true);
+  }
+
+  try{ await window.storage.set('gift-recorder-name', data.recordedBy, false); }catch(err){}
+
+  document.getElementById('patientName').value='';
+  document.getElementById('room').value='';
+  document.getElementById('note').value='';
+});
+
+document.getElementById('ward-refresh').addEventListener('click', refreshWard);
+document.getElementById('admin-refresh').addEventListener('click', refreshAdmin);
+
+document.querySelectorAll('.chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderAdminList();
+  });
+});
+
+document.getElementById('admin-search').addEventListener('input', (e)=>{
+  searchTerm = e.target.value;
+  renderAdminList();
+});
+
+document.getElementById('admin-list-area').addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  let actorName = null;
+  try{
+    const res = await window.storage.get('gift-admin-name', false);
+    actorName = res ? res.value : null;
+  }catch(err){}
+  if((action==='prepared' || action==='delivered') && !actorName){
+    actorName = prompt('กรุณากรอกชื่อผู้ดำเนินการ (จะจำไว้ใช้ครั้งถัดไป)');
+    if(actorName){
+      try{ await window.storage.set('gift-admin-name', actorName, false); }catch(err){}
+    }
+  }
+  btn.disabled = true;
+  const ok = await advanceStatusLocal(id, action, actorName);
+  btn.disabled = false;
+  renderAdminList();
+  if(ok){
+    showToast(action==='delivered' ? 'บันทึกว่าจัดส่งแล้ว' : action==='prepared' ? 'บันทึกว่าเตรียมของแล้ว' : 'ย้อนสถานะแล้ว');
+  }else{
+    showToast('อัปเดตในหน้านี้แล้ว แต่ซิงก์ไปอุปกรณ์อื่นไม่สำเร็จ — กดรีเฟรชอีกครั้งเพื่อลองใหม่', true);
+  }
+});
+
+document.getElementById('reset-btn').addEventListener('click', async ()=>{
+  if(confirm('ยืนยันล้างข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้')){
+    allRequests = [];
+    const ok = await persistAll();
+    renderAdminList();
+    showToast(ok ? 'ล้างข้อมูลทั้งหมดแล้ว' : 'ล้างข้อมูลในหน้านี้แล้ว แต่ซิงก์ไม่สำเร็จ', !ok);
+  }
+});
+
+// ---------- Requisition (ใบเบิก) modal ----------
+function buildReqDoc(){
+  const wardF = document.getElementById('req-ward-filter').value;
+  const dateF = document.getElementById('req-date-filter').value;
+  let rows = allRequests.filter(r=>{
+    if(wardF !== 'all' && r.ward !== wardF) return false;
+    if(dateF && r.admitDate !== dateF) return false;
+    return true;
+  });
+  rows = rows.slice().sort((a,b)=> new Date(a.createdAt) - new Date(b.createdAt));
+
+  document.getElementById('req-doc-ward').textContent = wardF === 'all' ? 'ทุกหน่วยงาน' : wardF;
+  document.getElementById('req-doc-date').textContent = dateF ? dateF : 'ทุกวันที่';
+  document.getElementById('req-doc-count').textContent = rows.length;
+
+  const tbody = document.getElementById('req-doc-tbody');
+  tbody.innerHTML = rows.length
+    ? rows.map((r,i) =>
+        '<tr><td>' + (i+1) + '</td><td>' + escapeHtml(r.patientName) + '</td><td>' + escapeHtml(r.room||'-') +
+        '</td><td>' + escapeHtml(r.giftType||'ชุดมาตรฐาน') + '</td><td>' + escapeHtml(r.note||'') + '</td></tr>'
+      ).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:14px;">ไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>';
+}
+
+function openReqModal(){
+  const currentWard = document.getElementById('ward').value;
+  document.getElementById('req-ward-filter').value = currentWard || 'all';
+  document.getElementById('req-date-filter').value = document.getElementById('admitDate').value || '';
+  buildReqDoc();
+  document.getElementById('req-overlay').classList.add('open');
+}
+
+function closeReqModal(){
+  document.getElementById('req-overlay').classList.remove('open');
+}
+
+function downloadAsPdf(elementId, filename){
+  const el = document.getElementById(elementId);
+  if(typeof html2pdf === 'undefined'){
+    showToast('โหลดไลบรารีสร้าง PDF ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง', true);
+    return;
+  }
+  showToast('กำลังสร้าง PDF...');
+  html2pdf().set({
+    margin: 8,
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  }).from(el).save();
+}
+
+document.getElementById('open-req-btn').addEventListener('click', openReqModal);
+document.getElementById('req-close-btn').addEventListener('click', closeReqModal);
+document.getElementById('req-back-btn-top').addEventListener('click', closeReqModal);
+document.getElementById('req-back-btn-bottom').addEventListener('click', closeReqModal);
+document.getElementById('req-overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'req-overlay') closeReqModal();
+});
+document.getElementById('req-ward-filter').addEventListener('change', buildReqDoc);
+document.getElementById('req-date-filter').addEventListener('change', buildReqDoc);
+document.getElementById('req-print-btn').addEventListener('click', ()=>{
+  document.body.classList.add('req-printing');
+  setTimeout(()=>{ window.print(); }, 50);
+});
+document.getElementById('req-pdf-btn').addEventListener('click', ()=>{
+  const wardF = document.getElementById('req-ward-filter').value;
+  const dateF = document.getElementById('req-date-filter').value;
+  const fname = 'ใบเบิกกิฟต์เซ็ต-' + (wardF === 'all' ? 'ทุกหน่วยงาน' : wardF) + (dateF ? '-' + dateF : '') + '.pdf';
+  downloadAsPdf('req-doc', fname);
+});
+// ---------- Report (รายงานสรุปรายเดือน/รายปี) modal ----------
+let reportPeriodType = 'month';
+
+function statusLabelTH(s){
+  return s === 'pending' ? 'รอเตรียม' : s === 'prepared' ? 'เตรียมแล้ว' : 'จัดส่งแล้ว';
+}
+
+function formatMonthLabel(m){
+  if(!m) return '';
+  const parts = m.split('-');
+  const y = parts[0], mo = parts[1];
+  const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const idx = parseInt(mo, 10) - 1;
+  return (thMonths[idx] || mo) + ' ' + y;
+}
+
+function getYearsInData(){
+  const years = new Set();
+  allRequests.forEach(r => { if(r.admitDate) years.add(r.admitDate.slice(0,4)); });
+  years.add(String(new Date().getFullYear()));
+  return Array.from(years).sort().reverse();
+}
+
+function populateReportYearOptions(){
+  const sel = document.getElementById('report-year');
+  const current = sel.value;
+  const years = getYearsInData();
+  sel.innerHTML = years.map(y => '<option value="' + y + '">' + y + '</option>').join('');
+  if(years.includes(current)) sel.value = current;
+}
+
+function buildReportDoc(){
+  const wardF = document.getElementById('report-ward').value;
+  let periodLabel = '';
+  let rows = allRequests.filter(r => {
+    if(!r.admitDate) return false;
+    if(wardF !== 'all' && r.ward !== wardF) return false;
+    if(reportPeriodType === 'month'){
+      const m = document.getElementById('report-month').value;
+      if(!m) return false;
+      return r.admitDate.slice(0,7) === m;
+    } else {
+      const y = document.getElementById('report-year').value;
+      if(!y) return false;
+      return r.admitDate.slice(0,4) === y;
+    }
+  });
+  rows = rows.slice().sort((a,b) => new Date(a.admitDate) - new Date(b.admitDate));
+
+  if(reportPeriodType === 'month'){
+    const m = document.getElementById('report-month').value;
+    periodLabel = m ? formatMonthLabel(m) : 'ยังไม่เลือกเดือน';
+  } else {
+    const y = document.getElementById('report-year').value;
+    periodLabel = y ? ('ปี ' + y) : 'ยังไม่เลือกปี';
+  }
+
+  document.getElementById('report-doc-period').textContent = periodLabel;
+  document.getElementById('report-doc-ward').textContent = wardF === 'all' ? 'ทุกหน่วยงาน' : wardF;
+  document.getElementById('report-doc-count').textContent = rows.length;
+
+  const cP = rows.filter(r => r.status === 'pending').length;
+  const cPr = rows.filter(r => r.status === 'prepared').length;
+  const cD = rows.filter(r => r.status === 'delivered').length;
+  document.getElementById('report-doc-status-breakdown').textContent =
+    'รอเตรียม ' + cP + ' · เตรียมแล้ว ' + cPr + ' · จัดส่งแล้ว ' + cD;
+
+  const tbody = document.getElementById('report-doc-tbody');
+  tbody.innerHTML = rows.length
+    ? rows.map((r,i) =>
+        '<tr><td>' + (i+1) + '</td><td>' + (r.admitDate||'-') + '</td><td>' + escapeHtml(r.ward||'-') +
+        '</td><td>' + escapeHtml(r.patientName) + '</td><td>' + escapeHtml(r.room||'-') +
+        '</td><td>' + escapeHtml(r.giftType||'ชุดมาตรฐาน') + '</td><td>' + statusLabelTH(r.status) +
+        '</td><td>' + escapeHtml(r.recordedBy||'-') + '</td></tr>'
+      ).join('')
+    : '<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);padding:14px;">ไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>';
+
+  return rows;
+}
+
+function openReportModal(){
+  populateReportYearOptions();
+  if(!document.getElementById('report-month').value){
+    document.getElementById('report-month').value = new Date().toISOString().slice(0,7);
+  }
+  buildReportDoc();
+  document.getElementById('report-overlay').classList.add('open');
+}
+
+function closeReportModal(){
+  document.getElementById('report-overlay').classList.remove('open');
+}
+
+function csvEscape(v){
+  return '"' + String(v).replace(/"/g, '""') + '"';
+}
+
+document.querySelectorAll('#report-overlay .filters .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#report-overlay .filters .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    reportPeriodType = chip.dataset.period;
+    document.getElementById('report-month-field').style.display = reportPeriodType === 'month' ? '' : 'none';
+    document.getElementById('report-year-field').style.display = reportPeriodType === 'year' ? '' : 'none';
+    buildReportDoc();
+  });
+});
+document.getElementById('report-month').addEventListener('change', buildReportDoc);
+document.getElementById('report-year').addEventListener('change', buildReportDoc);
+document.getElementById('report-ward').addEventListener('change', buildReportDoc);
+
+document.getElementById('open-report-btn').addEventListener('click', openReportModal);
+document.getElementById('report-close-btn').addEventListener('click', closeReportModal);
+document.getElementById('report-back-btn-top').addEventListener('click', closeReportModal);
+document.getElementById('report-back-btn-bottom').addEventListener('click', closeReportModal);
+document.getElementById('report-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'report-overlay') closeReportModal();
+});
+
+document.getElementById('report-print-btn').addEventListener('click', () => {
+  document.body.classList.add('report-printing');
+  setTimeout(() => { window.print(); }, 50);
+});
+
+document.getElementById('report-pdf-btn').addEventListener('click', () => {
+  const periodPart = reportPeriodType === 'month'
+    ? document.getElementById('report-month').value
+    : document.getElementById('report-year').value;
+  const fname = 'รายงานกิฟต์เซ็ต-' + (periodPart || 'all') + '.pdf';
+  downloadAsPdf('report-doc', fname);
+});
+
+document.getElementById('report-csv-btn').addEventListener('click', () => {
+  const rows = buildReportDoc();
+  if(!rows.length){ showToast('ไม่มีข้อมูลให้ดาวน์โหลดตามเงื่อนไขที่เลือก', true); return; }
+  const headers = ['ลำดับ','วันที่รับใหม่','หน่วยงาน','ชื่อ-สกุลผู้ป่วย','ห้อง','ประเภทกิฟต์เซ็ต','สถานะ','ผู้บันทึก'];
+  const lines = [headers.map(csvEscape).join(',')];
+  rows.forEach((r,i) => {
+    lines.push([
+      i+1,
+      csvEscape(r.admitDate||''),
+      csvEscape(r.ward||''),
+      csvEscape(r.patientName||''),
+      csvEscape(r.room||''),
+      csvEscape(r.giftType||''),
+      csvEscape(statusLabelTH(r.status)),
+      csvEscape(r.recordedBy||'')
+    ].join(','));
+  });
+  const csvContent = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const periodPart = reportPeriodType === 'month' ? document.getElementById('report-month').value : document.getElementById('report-year').value;
+  a.download = 'gift-report-' + (periodPart || 'all') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('req-printing');
+  document.body.classList.remove('report-printing');
+});
+
+// ---------- Init ----------
+(async function init(){
+  document.getElementById('admitDate').value = new Date().toISOString().slice(0,10);
+  try{
+    const res = await window.storage.get('gift-recorder-name', false);
+    if(res && res.value) document.getElementById('recordedBy').value = res.value;
+  }catch(e){}
+  await refreshWard();
+  setInterval(()=>{
+    const adminActive = document.getElementById('panel-admin').classList.contains('active');
+    if(adminActive) refreshAdmin();
+  }, 15000);
+})();
+</script>
+</body>
+</html>
