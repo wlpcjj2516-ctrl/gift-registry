@@ -575,6 +575,52 @@ function setBanner(text){
 const BANNER_NONE = '⚠️ ยังไม่ได้ตั้งค่าระบบเก็บข้อมูลกลาง — ข้อมูลที่บันทึกจะแสดงในหน้านี้เท่านั้น และจะหายไปเมื่อปิดหน้าเว็บ กรุณาเปิดไฟล์นี้ผ่าน Claude หรือตั้งค่า Google Sheets ตามคู่มือที่แนบมา';
 const BANNER_SHEET_FAIL = '⚠️ เชื่อมต่อ Google Sheets ไม่สำเร็จ (ตรวจสอบอินเทอร์เน็ตหรือลิงก์ Apps Script) — ข้อมูลล่าสุดอาจไม่ถูกซิงก์';
 
+// JSONP request: loads data via a <script> tag instead of fetch(), so it is
+// never subject to CORS restrictions (script loading is always allowed).
+// This is the standard, reliable way to call a Google Apps Script Web App
+// for GET data, since fetch()-based CORS support varies by deployment.
+let jsonpCounter = 0;
+function jsonpRequest(url, timeoutMs){
+  timeoutMs = timeoutMs || 10000;
+  return new Promise(function(resolve, reject){
+    const callbackName = 'giftJsonp_' + (jsonpCounter++) + '_' + Date.now();
+    const script = document.createElement('script');
+    let finished = false;
+    let timer = null;
+
+    function cleanup(){
+      delete window[callbackName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+      if(timer) clearTimeout(timer);
+    }
+
+    window[callbackName] = function(data){
+      if(finished) return;
+      finished = true;
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = function(){
+      if(finished) return;
+      finished = true;
+      cleanup();
+      reject(new Error('JSONP script load failed'));
+    };
+
+    const sep = url.indexOf('?') === -1 ? '?' : '&';
+    script.src = url + sep + 'callback=' + callbackName;
+    document.head.appendChild(script);
+
+    timer = setTimeout(function(){
+      if(finished) return;
+      finished = true;
+      cleanup();
+      reject(new Error('JSONP request timed out'));
+    }, timeoutMs);
+  });
+}
+
 // Pull the latest shared list into the in-memory array. Never throws.
 async function fetchFromStorage(){
   const mode = backendMode();
@@ -595,8 +641,7 @@ async function fetchFromStorage(){
   }
 
   try{
-    const res = await fetch(APPS_SCRIPT_URL + '?action=list');
-    const data = await res.json();
+    const data = await jsonpRequest(APPS_SCRIPT_URL + '?action=list');
     if(Array.isArray(data)) allRequests = data;
     setBanner(null);
     return true;
@@ -619,11 +664,9 @@ async function persistAll(){
     }catch(e){ console.warn('persistAll(claude):', e); return false; }
   }
 
-  // sheet mode: only used to clear everything — sent as a plain GET (no body),
-  // since POST bodies get silently dropped when Apps Script issues its redirect.
+  // sheet mode: only used to clear everything
   try{
-    const res = await fetch(APPS_SCRIPT_URL + '?action=reset');
-    const data = await res.json();
+    const data = await jsonpRequest(APPS_SCRIPT_URL + '?action=reset');
     if(!data || data.ok !== true) throw new Error('unexpected response');
     setBanner(null);
     return true;
@@ -640,8 +683,7 @@ async function backendAdd(entry){
   if(mode === 'claude' || mode === 'none') return persistAll();
   try{
     const url = APPS_SCRIPT_URL + '?action=add&entry=' + encodeURIComponent(JSON.stringify(entry));
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await jsonpRequest(url);
     if(!data || data.ok !== true) throw new Error('unexpected response');
     setBanner(null);
     return true;
@@ -658,8 +700,7 @@ async function backendUpdate(entry){
   if(mode === 'claude' || mode === 'none') return persistAll();
   try{
     const url = APPS_SCRIPT_URL + '?action=update&entry=' + encodeURIComponent(JSON.stringify(entry));
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await jsonpRequest(url);
     if(!data || data.ok !== true) throw new Error('unexpected response');
     setBanner(null);
     return true;
