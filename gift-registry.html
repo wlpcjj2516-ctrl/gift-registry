@@ -133,7 +133,7 @@
   .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
   .helper-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 
-  .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
   .summary .box{
     background:var(--paper);border:1px solid var(--line);border-radius:9px;
     padding:12px 8px;text-align:center;
@@ -344,14 +344,12 @@
   <div class="panel" id="panel-admin">
     <div class="summary">
       <div class="box pending"><div class="num" id="cnt-pending">0</div><div class="lbl">รอเตรียม</div></div>
-      <div class="box prepared"><div class="num" id="cnt-prepared">0</div><div class="lbl">เตรียมแล้ว</div></div>
       <div class="box delivered"><div class="num" id="cnt-delivered">0</div><div class="lbl">จัดส่งแล้ว</div></div>
     </div>
 
     <div class="filters">
       <button class="chip active" data-filter="all">ทั้งหมด</button>
       <button class="chip" data-filter="pending">รอเตรียม</button>
-      <button class="chip" data-filter="prepared">เตรียมแล้ว</button>
       <button class="chip" data-filter="delivered">จัดส่งแล้ว</button>
     </div>
 
@@ -736,7 +734,6 @@ async function advanceStatusLocal(id, toStatus, actorName){
   if(!e) return false;
   e.status = toStatus;
   const now = new Date().toISOString();
-  if(toStatus === 'prepared'){ e.preparedBy = actorName || 'ไม่ระบุ'; e.preparedAt = now; }
   if(toStatus === 'delivered'){ e.deliveredBy = actorName || 'ไม่ระบุ'; e.deliveredAt = now; }
   if(toStatus === 'pending'){ e.preparedBy=null; e.preparedAt=null; e.deliveredBy=null; e.deliveredAt=null; }
   const ok = await backendUpdate(e);
@@ -764,13 +761,10 @@ function tagCardHTML(r, mode){
   const lines = sealText(r.status).map(l => '<div>' + l + '</div>').join('');
   let actions = '';
   if(mode === 'admin'){
-    if(r.status === 'pending'){
-      actions = '<button class="btn small" data-action="prepared" data-id="' + r.id + '">✓ เตรียมของแล้ว</button>';
-    } else if(r.status === 'prepared'){
-      actions = '<button class="btn small" data-action="delivered" data-id="' + r.id + '">📦 จัดส่งแล้ว</button>' +
-                '<button class="btn ghost small" data-action="pending" data-id="' + r.id + '">↩ ย้อนกลับ</button>';
+    if(r.status === 'delivered'){
+      actions = '<button class="btn ghost small" data-action="pending" data-id="' + r.id + '">↩ ย้อนกลับ</button>';
     } else {
-      actions = '<button class="btn ghost small" data-action="prepared" data-id="' + r.id + '">↩ ย้อนกลับ</button>';
+      actions = '<button class="btn small" data-action="delivered" data-id="' + r.id + '">📦 จัดส่งแล้ว</button>';
     }
   }
   let html = '<div class="tag-card">';
@@ -802,15 +796,14 @@ function renderWardList(){
 }
 
 function renderAdminList(){
-  const cP = allRequests.filter(r=>r.status==='pending').length;
-  const cPr = allRequests.filter(r=>r.status==='prepared').length;
+  const cP = allRequests.filter(r=>r.status!=='delivered').length;
   const cD = allRequests.filter(r=>r.status==='delivered').length;
   document.getElementById('cnt-pending').textContent = cP;
-  document.getElementById('cnt-prepared').textContent = cPr;
   document.getElementById('cnt-delivered').textContent = cD;
 
   let list = allRequests;
-  if(currentFilter !== 'all') list = list.filter(r => r.status === currentFilter);
+  if(currentFilter === 'pending') list = list.filter(r => r.status !== 'delivered');
+  else if(currentFilter === 'delivered') list = list.filter(r => r.status === 'delivered');
   if(searchTerm){
     const t = searchTerm.toLowerCase();
     list = list.filter(r =>
@@ -914,7 +907,7 @@ document.getElementById('admin-list-area').addEventListener('click', async (e)=>
     const res = await window.storage.get('gift-admin-name', false);
     actorName = res ? res.value : null;
   }catch(err){}
-  if((action==='prepared' || action==='delivered') && !actorName){
+  if(action==='delivered' && !actorName){
     actorName = prompt('กรุณากรอกชื่อผู้ดำเนินการ (จะจำไว้ใช้ครั้งถัดไป)');
     if(actorName){
       try{ await window.storage.set('gift-admin-name', actorName, false); }catch(err){}
@@ -925,7 +918,7 @@ document.getElementById('admin-list-area').addEventListener('click', async (e)=>
   btn.disabled = false;
   renderAdminList();
   if(ok){
-    showToast(action==='delivered' ? 'บันทึกว่าจัดส่งแล้ว' : action==='prepared' ? 'บันทึกว่าเตรียมของแล้ว' : 'ย้อนสถานะแล้ว');
+    showToast(action==='delivered' ? 'บันทึกว่าจัดส่งแล้ว' : 'ย้อนสถานะแล้ว');
   }else{
     showToast('อัปเดตในหน้านี้แล้ว แต่ซิงก์ไปอุปกรณ์อื่นไม่สำเร็จ — กดรีเฟรชอีกครั้งเพื่อลองใหม่', true);
   }
@@ -1073,11 +1066,10 @@ function buildReportDoc(){
   document.getElementById('report-doc-ward').textContent = wardF === 'all' ? 'ทุกหน่วยงาน' : wardF;
   document.getElementById('report-doc-count').textContent = rows.length;
 
-  const cP = rows.filter(r => r.status === 'pending').length;
-  const cPr = rows.filter(r => r.status === 'prepared').length;
+  const cP = rows.filter(r => r.status !== 'delivered').length;
   const cD = rows.filter(r => r.status === 'delivered').length;
   document.getElementById('report-doc-status-breakdown').textContent =
-    'รอเตรียม ' + cP + ' · เตรียมแล้ว ' + cPr + ' · จัดส่งแล้ว ' + cD;
+    'รอเตรียม ' + cP + ' · จัดส่งแล้ว ' + cD;
 
   const tbody = document.getElementById('report-doc-tbody');
   tbody.innerHTML = rows.length
